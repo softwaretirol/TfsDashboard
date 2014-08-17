@@ -23,42 +23,53 @@
         <div class="grid fluid">
             <div class="row">
                 <div class="span12">
-                    <div class="notice marker-on-top fg-black text-center" ng-class="bgClass">
-                        <h2><strong>{{StatusText}} ({{Data.LastBuild.Username}})</strong></h2>
+                    <div ng-repeat="summary in Data" style="float:left; ">
+                        <button class="button" style="margin-right:10px;" ng-class="summary.bgClass">
+                            <span ng-click="selectSummary($index)">{{summary.Name}}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="span12">
+                    <div class="notice marker-on-top fg-black text-center" ng-class="SelectedTfs.bgClass">
+                        {{SelectedTfs.Name}}
+                        <h2>
+                            <strong>{{SelectedTfs.StatusText}} ({{SelectedTfs.LastBuild.Username}})</strong>
+                        </h2>
                     </div>
                 </div>
             </div>
             <div class="row">
                 <div class="span12">
                     <div class="image-container shadow" style="width:92px;float:left;">
-                        <img ng-src="Tfs?username={{Data.LastBuild.Who}}">
+                        <img ng-src="Tfs?username={{SelectedTfs.LastBuild.Who}}">
                     </div>
                     <div class="notice" style="width:300px; float:left; margin: 0 10px; padding-top:15px; height:92px;">
                         <div class="fg-white">
-                            <strong>{{Data.LastBuild.Username}}</strong><br />
-                            {{StatusText}}<br />
-                            Changeset: {{Data.LastBuild.SourceGetVersion}}
+                            <strong>{{SelectedTfs.LastBuild.Username}}</strong><br />
+                            {{SelectedTfs.StatusText}}<br />
+                            Changeset: {{SelectedTfs.LastBuild.SourceGetVersion}}
                         </div>
                     </div>
 
-                    <button class="shortcut fg-white" ng-class="(Data.LastBuild.TestCoverage.Statistics[0].PassedTests == Data.LastBuild.TestCoverage.Statistics[0].TotalTests) ? 'bg-lightGreen' : 'bg-lightRed'" style="float:left; margin-right:10px;">
-                        <i ng-class="(Data.LastBuild.TestCoverage.Statistics[0].PassedTests == Data.LastBuild.TestCoverage.Statistics[0].TotalTests) ? 'icon-checkmark' : 'icon-blocked'"></i>
-                        {{Data.LastBuild.TestCoverage.Statistics[0].TotalTests}}<br />Tests
+                    <button class="shortcut fg-white" ng-class="(SelectedTfs.LastBuild.TestCoverage.Statistics[0].PassedTests == SelectedTfs.LastBuild.TestCoverage.Statistics[0].TotalTests) ? 'bg-lightGreen' : 'bg-lightRed'" style="float:left; margin-right:10px;">
+                        <i ng-class="(SelectedTfs.LastBuild.TestCoverage.Statistics[0].PassedTests == SelectedTfs.LastBuild.TestCoverage.Statistics[0].TotalTests) ? 'icon-checkmark' : 'icon-blocked'"></i>
+                        {{SelectedTfs.LastBuild.TestCoverage.Statistics[0].TotalTests}}<br />Tests
                         <small class="bg-black fg-white">
-                            {{Data.LastBuild.TestCoverage.Statistics[0].PassedTests / Data.LastBuild.TestCoverage.Statistics[0].TotalTests * 100 | number:0}} %
+                            {{SelectedTfs.LastBuild.TestCoverage.Statistics[0].PassedTests / SelectedTfs.LastBuild.TestCoverage.Statistics[0].TotalTests * 100 | number:0}} %
                         </small>
                     </button>
 
                     <button class="shortcut bg-orange fg-white" style="float:left; margin-right:10px;">
                         <i class="icon-bookmark"></i>
-                        {{Data.CheckinsToday}}<br/>Checkins
+                        {{SelectedTfs.CheckinsToday}}<br />Checkins
                     </button>
                     <button class="shortcut bg-steel fg-white" style="float:left; margin-right:10px;">
                         <i class="icon-warning"></i>
-                        {{Data.LastWarningCount}}<br />Warnings
+                        {{SelectedTfs.LastWarningCount}}<br />Warnings
                     </button>
 
-                    <img style="height:86px; margin-top:5px; float:left" src="Content/Splash.png" />
                 </div>
             </div>
             <div class="row">
@@ -69,7 +80,7 @@
                             <strong>Buildserver</strong>
                         </div>
                     </div>
-                    <div class="chart" ng-repeat="build in Data.LastBuilds">
+                    <div class="chart" ng-repeat="build in SelectedTfs.LastBuilds">
                         <div class="progress-bar" ng-class="build.bgClass">
                             <div class="bar" style="height: 70%; width:10px; background:#eeeeee" ng-style="{ 'height': (1 - build.PercentageDurationLastBuilds) * 100 + '%'}"></div>
                         </div>
@@ -82,7 +93,7 @@
                         </div>
                     </div>
                     <div class="chart">
-                        <div class="progress-bar bg-orange" ng-repeat="checkin in Data.CheckinStatistic">
+                        <div class="progress-bar bg-orange" ng-repeat="checkin in SelectedTfs.CheckinStatistic">
                             <div class="bar" style="height: 70%; width:10px; background:#eeeeee" ng-style="{ 'height': (1 - checkin.PercentageCheckins) * 100 + '%'}"></div>
                         </div>
                     </div>
@@ -93,7 +104,7 @@
             <div class="listview-outlook" data-role="listview" style="margin-top: 20px">
                 <div class="list-group ">
                     <a href="" class="group-title">Changesets</a>
-                    <div class="group-content" ng-repeat="checkin in Data.LastCheckins">
+                    <div class="group-content" ng-repeat="checkin in SelectedTfs.LastCheckins">
 
                         <div class="list marked" href="#">
                             <div class="list-content">

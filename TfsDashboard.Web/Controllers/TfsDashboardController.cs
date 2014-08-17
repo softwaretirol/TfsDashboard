@@ -17,20 +17,27 @@ namespace TfsDashboard.Web.Controllers
     public class TfsDashboardController : ApiController
     {
         [WebApiOutputCache(3, "TfsSummary")]
-        public TfsDashboardSummary Get()
+        public TfsDashboardSummary[] Get()
         {
             var watch = Stopwatch.StartNew();
-            var summary = new TfsDashboardSummary();
 
-            var settings = TfsDashboardSettingsLoader.Load();
-            var manager = new TfsManager(settings.First(x => x.IsPrimary));
+            var settings = TfsDashboardSettingsLoader.Load().ToArray();
 
-            manager.GetBuildInformation(summary);
-            manager.GetChangeset(summary);
+            var summaries = new TfsDashboardSummary[settings.Length];
 
+            Parallel.ForEach(settings, (setting, state, idx) =>
+            {
+                var manager = new TfsManager(setting);
 
-            Trace.WriteLine(watch.Elapsed);
-            return summary;
+                var summary = new TfsDashboardSummary();
+                manager.GetBuildInformation(summary);
+                manager.GetChangeset(summary);
+                summary.Name = setting.Name;
+                summaries[idx] = summary;
+            });
+
+            Trace.WriteLine("TfsDashboardSummary Get: " + watch.Elapsed);
+            return summaries;
         }
 
     }

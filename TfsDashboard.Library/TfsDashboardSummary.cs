@@ -18,5 +18,7 @@ namespace TfsDashboard.Library
         public dynamic CheckinStatistic { get; set; }
 
         public int? LastWarningCount { get; set; }
+
+        public string Name { get; set; }
     }
 }

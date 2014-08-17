@@ -170,7 +170,6 @@
     <Content Include="Content\sb-admin-2\tables.html" />
     <Content Include="Content\sb-admin-2\typography.html" />
     <Content Include="Content\Site.css" />
-    <Content Include="Content\Splash.png" />
     <Content Include="Content\style.css" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />

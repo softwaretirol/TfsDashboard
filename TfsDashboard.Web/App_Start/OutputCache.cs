@@ -47,7 +47,6 @@ namespace TfsDashboard.Web.App_Start
             {
                 actionContext.Response = actionContext.Request.CreateResponse();
                 actionContext.Response.Content = new StringContent(cachedValue);
-                //actionContext.Response.Content.Headers.ContentType = new MediaTypeHeaderValue(Cache.Get(_key + "+ContentType").ToString());
                 return;
             }
             Callback = (actionExecutedContext) =>

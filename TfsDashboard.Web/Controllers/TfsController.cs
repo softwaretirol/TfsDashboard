@@ -15,7 +15,7 @@ namespace TfsDashboard.Web.Controllers
                 return null;
 
             var settings = TfsDashboardSettingsLoader.Load();
-            var manager = new TfsManager(settings.First(x => x.IsPrimary));
+            var manager = new TfsManager(settings.First());
             var img = manager.GetImage(username);
             return File(img, "image");
         }

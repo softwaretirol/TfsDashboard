@@ -51,6 +51,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TfsBuildSummary.cs" />
+    <Compile Include="TfsCheckinSummary.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TfsDashboardSettings.cs" />
     <Compile Include="TfsDashboardSummary.cs" />

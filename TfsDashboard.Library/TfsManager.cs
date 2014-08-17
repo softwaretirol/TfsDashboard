@@ -46,21 +46,21 @@ namespace TfsDashboard.Library
             _projectCollection.EnsureAuthenticated();
 
             var versionControl = _projectCollection.GetService<VersionControlServer>();
-            var results = versionControl.QueryHistory("$/", RecursionType.Full, 1000).ToList();
-            summary.LastCheckins = results.Take(15).Select(x => new
+            var results = versionControl.QueryHistory("$/", RecursionType.Full, 3000).ToList();
+            summary.LastCheckins = results.Take(15).Select(x => new TfsCheckinSummary
             {
                 Comment = x.Comment,
                 Committer = x.CommitterDisplayName,
                 Username = x.Committer,
                 CreationDate = x.CreationDate,
                 TimeElapsed = x.CreationDate
-            }).ToList();
+            }).Reverse().ToList();
 
             summary.CheckinStatistic = results.GroupBy(x => x.CreationDate.Date).Select(x => new
             {
                 Day = x.Key,
                 Count = x.Count()
-            }).Take(30).ToList();
+            }).Take(30).Reverse().ToList();
 
             summary.CheckinsToday = results.Count(x => x.CreationDate.Date == DateTime.Today);
             Trace.WriteLine("GetChangeset: " + watch.Elapsed);
@@ -77,25 +77,29 @@ namespace TfsDashboard.Library
             var results = buildServer.QueryBuilds(buildDetailSpec);
             if (!results.Failures.Any())
             {
-                var builds = results.Builds.Select(buildDetail => new
+                var builds = results.Builds.Select(buildDetail => new TfsBuildSummary
                 {
-                    Duration =(int) (buildDetail.FinishTime - buildDetail.StartTime).TotalSeconds,
+                    Uri = buildDetail.Uri,
+                    Duration = (int) (buildDetail.FinishTime - buildDetail.StartTime).TotalSeconds,
                     Who = buildDetail.Requests[0].RequestedFor,
                     Username = buildDetail.Requests[0].RequestedForDisplayName,
-                    buildDetail.BuildNumber,
-                    buildDetail.DropLocation,
-                    buildDetail.StartTime,
-                    buildDetail.TestStatus,
+                    BuildNumber = buildDetail.BuildNumber,
+                    DropLocation = buildDetail.DropLocation,
+                    StartTime = buildDetail.StartTime,
+                    TestStatus = buildDetail.TestStatus,
                     CompilationStatus = buildDetail.CompilationStatus.ToString(),
                     Status = buildDetail.Status.ToString(),
-                    buildDetail.SourceGetVersion,
-                    TestCoverage = GetTestcoverage(_projectCollection, buildDetail.Uri)
+                    SourceGetVersion = buildDetail.SourceGetVersion,
                 }).ToList();
-                summary.LastBuilds = builds.Take(30).ToList();
+                summary.LastBuilds = builds.Take(30).Reverse().ToList();
                 
                 var lastBuild = builds.OrderByDescending(x => x.StartTime).FirstOrDefault();
-                summary.LastBuild = lastBuild;
-                summary.LastWarningCount = InformationNodeConverters.GetBuildWarnings(results.Builds.OrderByDescending(x => x.StartTime).FirstOrDefault()).Count;
+                if (lastBuild != null)
+                {
+                    lastBuild.TestCoverage = GetTestcoverage(_projectCollection, lastBuild.Uri);
+                    summary.LastBuild = lastBuild;
+                    summary.LastWarningCount = InformationNodeConverters.GetBuildWarnings(results.Builds.OrderByDescending(x => x.StartTime).FirstOrDefault()).Count;
+                }
 
             }
             Trace.WriteLine("GetBuildInformation: " + watch.Elapsed);

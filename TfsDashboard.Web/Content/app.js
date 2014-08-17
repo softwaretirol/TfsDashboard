@@ -1,30 +1,32 @@
 ﻿var app = angular.module('TfsDashboardApp', []);
 
-function getBuildColorClass(status) {
-    switch (status) {
-        case "Failed":
-            return 'failedBuild';
-        case "InProgress":
-            return 'unkownBuild';
-        case "None":
-            return 'unkownBuild';
-        case "NotStarted":
-            return 'unkownBuild';
-        case "PartiallySucceeded":
-            return 'partiallyBuild';
-        case "Stopped":
-            return 'failedBuild';
-        case "Succeeded":
-            return 'successBuild';
+function getBuildColorClass(lastBuild) {
+    if (lastBuild != undefined) {
+        switch (lastBuild.Status) {
+            case "Failed":
+                return 'failedBuild';
+            case "InProgress":
+                return 'unkownBuild';
+            case "None":
+                return 'unkownBuild';
+            case "NotStarted":
+                return 'unkownBuild';
+            case "PartiallySucceeded":
+                return 'partiallyBuild';
+            case "Stopped":
+                return 'failedBuild';
+            case "Succeeded":
+                return 'successBuild';
+        }
     }
-    return undefined;
+    return 'unkownBuild';
 }
 
-app.filter("timeago", function() {
+app.filter("timeago", function () {
     //time: the time
     //local: compared to what time? default: now
     //raw: wheter you want in a format of "5 minutes ago", or "5 minutes"
-    return function(time, local, raw) {
+    return function (time, local, raw) {
         if (!time) return "never";
 
         if (!local) {
@@ -86,62 +88,77 @@ app.directive('timeago', function () {
     };
 });
 
+function calculateDiagrams($scope) {
+
+
+    $.each($scope.Data, function (idx, summary) {
+
+        var maxDuration;
+        $.each(summary.LastBuilds, function (idx, item) {
+            if (item.Duration > maxDuration || maxDuration == undefined)
+                maxDuration = item.Duration;
+        });
+        $.each(summary.LastBuilds, function (idx, item) {
+            item.PercentageDurationLastBuilds = item.Duration / maxDuration;
+            item.bgClass = getBuildColorClass(item);
+        });
+
+        var maxCheckins;
+        $.each(summary.CheckinStatistic, function (idx, item) {
+            if (item.Count > maxCheckins || maxCheckins == undefined)
+                maxCheckins = item.Count;
+        });
+        $.each(summary.CheckinStatistic, function (idx, item) {
+            item.PercentageCheckins = item.Count / maxCheckins;
+        });
+
+
+        summary.bgClass = getBuildColorClass(summary.LastBuild);
+        summary.StatusText = getBuildText(summary.LastBuild);
+    });
+
+}
+
+function getBuildText(lastBuild) {
+    if (lastBuild != undefined) {
+        switch (lastBuild.Status) {
+            case "Failed":
+                return 'Build fehlgeschlagen';
+            case "InProgress":
+                return 'In Bearbeitung';
+            case "None":
+                return 'None';
+            case "NotStarted":
+                return 'Noch nicht gestartet';
+            case "PartiallySucceeded":
+                return 'Teilweise erfolgreich';
+            case "Stopped":
+                return 'Buildvorgang abgebrochen';
+            case "Succeeded":
+                return 'Alles in Ordnung - Successfull';
+        }
+    }
+    return "Unbekannt";
+}
+
+var currentIdx = 0;
 function refresh($scope, $http) {
     $http({ method: 'GET', url: '/api/TfsDashboard' }).
-            success(function (data, status, headers, config) {
-                $scope.Data = data;
+            success(function (summaries, status, headers, config) {
+                $scope.Data = summaries;
 
-                var maxDuration;
-                $.each(data.LastBuilds, function(idx, item) {
-                    if (item.Duration > maxDuration || maxDuration == undefined)
-                        maxDuration = item.Duration;
-                });
-                $.each(data.LastBuilds, function (idx, item) {
-                    item.PercentageDurationLastBuilds = item.Duration / maxDuration;
-                    item.bgClass = getBuildColorClass(item.Status);
-                });
-                data.LastBuilds.reverse();
+                $scope.SelectedTfs = summaries[currentIdx];
 
-                var maxCheckins;
-                $.each(data.CheckinStatistic, function (idx, item) {
-                    if (item.Count > maxCheckins || maxCheckins == undefined)
-                        maxCheckins = item.Count;
-                });
-                $.each(data.CheckinStatistic, function (idx, item) {
-                    item.PercentageCheckins = item.Count / maxCheckins;
-                });
-                data.CheckinStatistic.reverse();
+                $scope.selectSummary = function (idx) {
+                    currentIdx = idx;
+                    $scope.SelectedTfs = summaries[currentIdx];
+                    calculateDiagrams($scope);
+                };
 
-                $scope.bgClass = getBuildColorClass(data.LastBuild.Status);
-                switch (data.LastBuild.Status) {
-                    case "Failed":
-                        $scope.StatusText = 'Build fehlgeschlagen';
-                        break;
-                    case "InProgress":
-                        $scope.StatusText = 'In Bearbeitung';
-                        break;
-                    case "None":
-                        $scope.StatusText = 'None';
-                        break;
-                    case "NotStarted":
-                        $scope.StatusText = 'Noch nicht gestartet';
-                        break;
-                    case "PartiallySucceeded":
-                        $scope.StatusText = 'Teilweise erfolgreich';
-                        break;
-                    case "Stopped":
-                        $scope.StatusText = 'Buildvorgang abgebrochen';
-                        break;
-                    case "Succeeded":
-                        $scope.StatusText = 'Alles in Ordnung - Successfull';
-                        break;
-                }
+                calculateDiagrams($scope);
 
                 $("#loader").hide();
                 $("#wrapper").show();
-            }).
-            error(function (data, status, headers, config) {
-
             });
 }
 
