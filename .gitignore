@@ -1,0 +1,10 @@
+﻿################################################################################
+# Diese .gitignore-Datei wurde von Microsoft(R) Visual Studio automatisch erstellt.
+################################################################################
+
+/packages
+/TfsDashboard.Library/bin/Debug
+/TfsDashboard.Library/obj/Debug
+/TfsDashboard.Web/bin
+/TfsDashboard.Web/obj
+/TfsDashboard.Web/Properties/PublishProfiles

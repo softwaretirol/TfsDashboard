@@ -1,0 +1,37 @@
+﻿.failedBuild {
+    border-color: red !important;
+    background-color: red !important;
+    color: #000;
+}
+
+.successBuild {
+    border-color: #5cb85c !important;
+    background-color: #5cb85c !important;
+}
+
+.partiallyBuild {
+    border-color: #ffd700 !important;
+    background-color: #ffd700 !important;
+    color: #000;
+}
+
+.unkownBuild {
+    border-color: #c0c0c0 !important;
+    background-color: #c0c0c0 !important;
+    color: #000;
+}
+
+.chart {
+    height: 92px;
+    margin: 0 0 10px 0;
+    display: inline-block;
+    float: left;
+}
+
+.progress-bar {
+    width: 10px !important;
+    height: 100% !important;
+    margin-right: 3px;
+    display: inline-block;
+    float: left;
+}

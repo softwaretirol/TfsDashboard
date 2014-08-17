@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="en" ng-app="TfsDashboardApp">
+<head>
+    <title>TfsDashboard</title>
+
+    <link rel="stylesheet" href="Content/metro-ui/css/metro-bootstrap.css">
+    <link rel="stylesheet" href="Content/metro-ui/css/metro-bootstrap-responsive.min.css">
+    <link rel="stylesheet" href="Content/metro-ui/css/iconFont.min.css">
+    <link href="Content/style.css" rel="stylesheet" />
+
+    <script src="Scripts/jquery-1.10.2.min.js"></script>
+    <script src="Scripts/metro-ui/jquery.ui.widget.js"></script>
+    <script src="Scripts/metro-ui/metro.min.js"></script>
+    <script src="Content/angular.min.js"></script>
+    <script src="Content/app.js"></script>
+</head>
+<body class="metro">
+    <div id="loader" style="position:absolute;left:0;right:0;top:0;bottom:0;background-color:black">
+        <img style="position:absolute;left:50%; top:50%;margin-left:-64px;" src="Content/36.gif" />
+    </div>
+
+    <div id="wrapper" class="container" ng-controller="GreetingController" style="display: none">
+        <div class="grid fluid">
+            <div class="row">
+                <div class="span12">
+                    <div class="notice marker-on-top fg-black text-center" ng-class="bgClass">
+                        <h2><strong>{{StatusText}} ({{Data.LastBuild.Username}})</strong></h2>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="span12">
+                    <div class="image-container shadow" style="width:92px;float:left;">
+                        <img ng-src="Tfs?username={{Data.LastBuild.Who}}">
+                    </div>
+                    <div class="notice" style="width:300px; float:left; margin: 0 10px; padding-top:15px; height:92px;">
+                        <div class="fg-white">
+                            <strong>{{Data.LastBuild.Username}}</strong><br />
+                            {{StatusText}}<br />
+                            Changeset: {{Data.LastBuild.SourceGetVersion}}
+                        </div>
+                    </div>
+
+                    <button class="shortcut fg-white" ng-class="(Data.LastBuild.TestCoverage.Statistics[0].PassedTests == Data.LastBuild.TestCoverage.Statistics[0].TotalTests) ? 'bg-lightGreen' : 'bg-lightRed'" style="float:left; margin-right:10px;">
+                        <i ng-class="(Data.LastBuild.TestCoverage.Statistics[0].PassedTests == Data.LastBuild.TestCoverage.Statistics[0].TotalTests) ? 'icon-checkmark' : 'icon-blocked'"></i>
+                        {{Data.LastBuild.TestCoverage.Statistics[0].TotalTests}}<br />Tests
+                        <small class="bg-black fg-white">
+                            {{Data.LastBuild.TestCoverage.Statistics[0].PassedTests / Data.LastBuild.TestCoverage.Statistics[0].TotalTests * 100 | number:0}} %
+                        </small>
+                    </button>
+
+                    <button class="shortcut bg-orange fg-white" style="float:left; margin-right:10px;">
+                        <i class="icon-bookmark"></i>
+                        {{Data.CheckinsToday}}<br/>Checkins
+                    </button>
+                    <button class="shortcut bg-steel fg-white" style="float:left; margin-right:10px;">
+                        <i class="icon-warning"></i>
+                        {{Data.LastWarningCount}}<br />Warnings
+                    </button>
+
+                    <img style="height:86px; margin-top:5px; float:left" src="Content/Splash.png" />
+                </div>
+            </div>
+            <div class="row">
+
+                <div class="span6">
+                    <div class="notice marker-on-right" style="width:130px; -moz-min-width:0; -ms-min-width:0; -o-min-width:0; -webkit-min-width:0; min-width:0; float:left; margin-right:10px; padding-top:35px; height:92px;">
+                        <div class="fg-white">
+                            <strong>Buildserver</strong>
+                        </div>
+                    </div>
+                    <div class="chart" ng-repeat="build in Data.LastBuilds">
+                        <div class="progress-bar" ng-class="build.bgClass">
+                            <div class="bar" style="height: 70%; width:10px; background:#eeeeee" ng-style="{ 'height': (1 - build.PercentageDurationLastBuilds) * 100 + '%'}"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="span6">
+                    <div class="notice marker-on-right bg-lightBlue" style="width:130px; -moz-min-width:0; -ms-min-width:0; -o-min-width:0; -webkit-min-width:0; min-width:0; float:left; margin-right:10px; padding-top:35px; height:92px;">
+                        <div class="fg-white">
+                            <strong>Checkins</strong>
+                        </div>
+                    </div>
+                    <div class="chart">
+                        <div class="progress-bar bg-orange" ng-repeat="checkin in Data.CheckinStatistic">
+                            <div class="bar" style="height: 70%; width:10px; background:#eeeeee" ng-style="{ 'height': (1 - checkin.PercentageCheckins) * 100 + '%'}"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="listview-outlook" data-role="listview" style="margin-top: 20px">
+                <div class="list-group ">
+                    <a href="" class="group-title">Changesets</a>
+                    <div class="group-content" ng-repeat="checkin in Data.LastCheckins">
+
+                        <div class="list marked" href="#">
+                            <div class="list-content">
+
+                                <span class="list-icon" style="float:left">
+                                    <img height="50" ng-src="Tfs?username={{checkin.Username}}">
+                                </span>
+                                <div style="float:left">
+                                    <span class="list-title">{{checkin.Comment}}</span>
+                                    <span class="list-subtitle">Vor {{checkin.TimeElapsed | timeago}}</span>
+                                    <span class="list-remark">{{checkin.Committer}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</body>
+</html>
