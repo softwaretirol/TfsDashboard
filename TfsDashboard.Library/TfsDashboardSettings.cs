@@ -14,5 +14,6 @@ namespace TfsDashboard.Library
         public string Project { get; set; }
         public string BuildDefinition { get; set; }
         public string Name { get; set; }
+        public string VersionControlPath { get; set; }
     }
 }

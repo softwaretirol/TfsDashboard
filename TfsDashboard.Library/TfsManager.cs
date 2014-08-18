@@ -31,22 +31,28 @@ namespace TfsDashboard.Library
         {
             if (string.IsNullOrWhiteSpace(username))
                 return null;
-
-            _projectCollection.EnsureAuthenticated();
-            var identityService = _projectCollection.GetService<IIdentityManagementService2>();
-            TeamFoundationIdentity i = identityService.ReadIdentity(IdentitySearchFactor.AccountName, username,
-                MembershipQuery.Direct, ReadIdentityOptions.ExtendedProperties);
-            var img = i.GetProperty("Microsoft.TeamFoundation.Identity.Image.Data");
-            return img as byte[];
+            try
+            {
+                _projectCollection.EnsureAuthenticated();
+                var identityService = _projectCollection.GetService<IIdentityManagementService2>();
+                TeamFoundationIdentity i = identityService.ReadIdentity(IdentitySearchFactor.AccountName, username,
+                    MembershipQuery.Direct, ReadIdentityOptions.ExtendedProperties);
+                var img = i.GetProperty("Microsoft.TeamFoundation.Identity.Image.Data");
+                return img as byte[];
+            }
+            catch
+            {
+                return null;
+            }
         }
 
-        public void GetChangeset(TfsDashboardSummary summary)
+        private void GetChangeset(TfsDashboardSummary summary)
         {
             var watch = Stopwatch.StartNew();
             _projectCollection.EnsureAuthenticated();
 
             var versionControl = _projectCollection.GetService<VersionControlServer>();
-            var results = versionControl.QueryHistory("$/", RecursionType.Full, 3000).ToList();
+            var results = versionControl.QueryHistory(_settings.VersionControlPath, RecursionType.Full, 3000).ToList();
             summary.LastCheckins = results.Take(15).Select(x => new TfsCheckinSummary
             {
                 Comment = x.Comment,
@@ -66,7 +72,7 @@ namespace TfsDashboard.Library
             Trace.WriteLine("GetChangeset: " + watch.Elapsed);
         }
 
-        public void GetBuildInformation(TfsDashboardSummary summary)
+        private void GetBuildInformation(TfsDashboardSummary summary)
         {
             var watch = Stopwatch.StartNew();
             _projectCollection.EnsureAuthenticated();
@@ -74,6 +80,7 @@ namespace TfsDashboard.Library
             var buildDetailSpec = buildServer.CreateBuildDetailSpec(_settings.Project, _settings.BuildDefinition);
             buildDetailSpec.MaxBuildsPerDefinition = 30;
             buildDetailSpec.QueryOrder = BuildQueryOrder.FinishTimeDescending;
+            buildDetailSpec.InformationTypes = null;
             var results = buildServer.QueryBuilds(buildDetailSpec);
             if (!results.Failures.Any())
             {
@@ -90,7 +97,7 @@ namespace TfsDashboard.Library
                     CompilationStatus = buildDetail.CompilationStatus.ToString(),
                     Status = buildDetail.Status.ToString(),
                     SourceGetVersion = buildDetail.SourceGetVersion,
-                }).ToList();
+                });
                 summary.LastBuilds = builds.Take(30).Reverse().ToList();
                 
                 var lastBuild = builds.OrderByDescending(x => x.StartTime).FirstOrDefault();
@@ -124,6 +131,14 @@ namespace TfsDashboard.Library
             };
             Trace.WriteLine("GetTestCoverage: " + watch.Elapsed);
             return result;
+        }
+
+        public TfsDashboardSummary CreateSummary()
+        {
+            var summary = new TfsDashboardSummary();
+            GetBuildInformation(summary);
+            GetChangeset(summary);
+            return summary;
         }
     }
 }

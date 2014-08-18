@@ -16,28 +16,30 @@ namespace TfsDashboard.Web.Controllers
 {
     public class TfsDashboardController : ApiController
     {
+        private static object _lock = new object();
+
         [WebApiOutputCache(3, "TfsSummary")]
         public TfsDashboardSummary[] Get()
         {
-            var watch = Stopwatch.StartNew();
-
-            var settings = TfsDashboardSettingsLoader.Load().ToArray();
-
-            var summaries = new TfsDashboardSummary[settings.Length];
-
-            Parallel.ForEach(settings, (setting, state, idx) =>
+            lock (_lock)
             {
-                var manager = new TfsManager(setting);
+                var watch = Stopwatch.StartNew();
 
-                var summary = new TfsDashboardSummary();
-                manager.GetBuildInformation(summary);
-                manager.GetChangeset(summary);
-                summary.Name = setting.Name;
-                summaries[idx] = summary;
-            });
+                var settings = TfsDashboardSettingsLoader.Load().ToArray();
 
-            Trace.WriteLine("TfsDashboardSummary Get: " + watch.Elapsed);
-            return summaries;
+                var summaries = new TfsDashboardSummary[settings.Length];
+
+                Parallel.ForEach(settings, (setting, state, idx) =>
+                {
+                    var manager = new TfsManager(setting);
+                    var summary = manager.CreateSummary();
+                    summary.Name = setting.Name;
+                    summaries[idx] = summary;
+                });
+
+                Trace.WriteLine("TfsDashboardSummary Get: " + watch.Elapsed);
+                return summaries;
+            }
         }
 
     }
