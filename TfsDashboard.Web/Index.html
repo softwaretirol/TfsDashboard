@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="Content/metro-ui/css/iconFont.min.css">
     <link href="Content/style.css" rel="stylesheet" />
 
-    <script src="Scripts/jquery-1.10.2.min.js"></script>
+    <script src="Scripts/jquery-2.1.1.min.js"></script>
     <script src="Scripts/metro-ui/jquery.ui.widget.js"></script>
     <script src="Scripts/metro-ui/metro.min.js"></script>
     <script src="Content/angular.min.js"></script>
@@ -24,9 +24,12 @@
             <div class="row">
                 <div class="span12">
                     <div ng-repeat="summary in Data" style="float:left; ">
-                        <button class="button" style="margin-right:10px;" ng-class="summary.bgClass">
-                            <span ng-click="selectSummary($index)">{{summary.Name}}</span>
-                        </button>
+                        <a href="#" class="button" style="margin-right:10px;" ng-class="summary.bgClass">
+                            <h5 ng-click="selectSummary($index)">
+                                {{summary.Name}} ({{summary.CheckinsToday}})
+                                <img src="Content/ajax-loader.gif" ng-hide="summary.LastBuild.Status != 'InProgress'" />
+                            </h5>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -36,7 +39,9 @@
                         {{SelectedTfs.Name}}
                         <h2>
                             <strong>{{SelectedTfs.StatusText}} ({{SelectedTfs.LastBuild.Username}})</strong>
+
                         </h2>
+                        <img style="position:absolute; right:50px; top:50%; margin-top:-15px; height:30px;" src="Content/ajax-loader.gif" ng-hide="SelectedTfs.LastBuild.Status != 'InProgress'" />
                     </div>
                 </div>
             </div>
@@ -74,10 +79,10 @@
             </div>
             <div class="row">
 
-                <div class="span6">
-                    <div class="notice marker-on-right" style="width:130px; -moz-min-width:0; -ms-min-width:0; -o-min-width:0; -webkit-min-width:0; min-width:0; float:left; margin-right:10px; padding-top:35px; height:92px;">
+                <div class="span12">
+                    <div class="notice marker-on-right" style="width:130px; -moz-min-width:0; -ms-min-width:0; -o-min-width:0; -webkit-min-width:0; min-width:0; float:left; margin-right:10px; padding-top:25px; height:92px;">
                         <div class="fg-white">
-                            <strong>Buildserver</strong>
+                            <strong>Buildserver ({{SelectedTfs.maxDuration}} Sec.)</strong>
                         </div>
                     </div>
                     <div class="chart" ng-repeat="build in SelectedTfs.LastBuilds">
@@ -86,10 +91,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="span6">
-                    <div class="notice marker-on-right bg-lightBlue" style="width:130px; -moz-min-width:0; -ms-min-width:0; -o-min-width:0; -webkit-min-width:0; min-width:0; float:left; margin-right:10px; padding-top:35px; height:92px;">
+            </div>
+            <div class="row">
+                <div class="span12">
+                    <div class="notice marker-on-right bg-lightBlue" style="width:130px; -moz-min-width:0; -ms-min-width:0; -o-min-width:0; -webkit-min-width:0; min-width:0; float:left; margin-right:10px; padding-top:25px; height:92px;">
                         <div class="fg-white">
-                            <strong>Checkins</strong>
+                            <strong>Checkins ({{SelectedTfs.maxCheckins}})</strong>
                         </div>
                     </div>
                     <div class="chart">

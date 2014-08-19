@@ -46,13 +46,27 @@ namespace TfsDashboard.Library
             }
         }
 
+        private static VersionSpec GetDateVSpec(DateTime date)
+        {
+            string dateSpec = string.Format("D{0:yyy}-{0:MM}-{0:dd}T{0:HH}:{0:mm}", date);
+            return VersionSpec.ParseSingleSpec(dateSpec, "");
+        }
+
         private void GetChangeset(TfsDashboardSummary summary)
         {
             var watch = Stopwatch.StartNew();
             _projectCollection.EnsureAuthenticated();
 
             var versionControl = _projectCollection.GetService<VersionControlServer>();
-            var results = versionControl.QueryHistory(_settings.VersionControlPath, RecursionType.Full, 3000).ToList();
+            var queryParams = new QueryHistoryParameters(_settings.VersionControlPath, RecursionType.Full)
+            {
+                Item = _settings.VersionControlPath,
+                IncludeDownloadInfo = false,
+                IncludeChanges = false,
+                VersionStart = GetDateVSpec(DateTime.Today.AddDays(-75))
+            };
+            var query = versionControl.QueryHistory(queryParams);
+            var results = query.ToList();
             summary.LastCheckins = results.Take(15).Select(x => new TfsCheckinSummary
             {
                 Comment = x.Comment,
@@ -60,13 +74,21 @@ namespace TfsDashboard.Library
                 Username = x.Committer,
                 CreationDate = x.CreationDate,
                 TimeElapsed = x.CreationDate
-            }).Reverse().ToList();
+            }).ToList();
 
-            summary.CheckinStatistic = results.GroupBy(x => x.CreationDate.Date).Select(x => new
+            var allDays = Enumerable.Range(0, 75).Select(x => new TfsCheckinStatistic
+            {
+                Day = DateTime.Today.AddDays(-x),
+                Count = 0
+            });
+            var checkins = results.GroupBy(x => x.CreationDate.Date).Select(x => new TfsCheckinStatistic
             {
                 Day = x.Key,
                 Count = x.Count()
-            }).Take(30).Reverse().ToList();
+            }).ToList();
+
+            checkins = checkins.Union(allDays.Where(x => checkins.All(y => y.Day != x.Day))).ToList();
+            summary.CheckinStatistic = checkins.OrderBy(x => x.Day).ToList();
 
             summary.CheckinsToday = results.Count(x => x.CreationDate.Date == DateTime.Today);
             Trace.WriteLine("GetChangeset: " + watch.Elapsed);
@@ -76,18 +98,21 @@ namespace TfsDashboard.Library
         {
             var watch = Stopwatch.StartNew();
             _projectCollection.EnsureAuthenticated();
+
             var buildServer = _projectCollection.GetService<IBuildServer>();
             var buildDetailSpec = buildServer.CreateBuildDetailSpec(_settings.Project, _settings.BuildDefinition);
-            buildDetailSpec.MaxBuildsPerDefinition = 30;
+            buildDetailSpec.MaxBuildsPerDefinition = 150;
+            buildDetailSpec.QueryOptions = QueryOptions.All;
             buildDetailSpec.QueryOrder = BuildQueryOrder.FinishTimeDescending;
             buildDetailSpec.InformationTypes = null;
+
             var results = buildServer.QueryBuilds(buildDetailSpec);
             if (!results.Failures.Any())
             {
                 var builds = results.Builds.Select(buildDetail => new TfsBuildSummary
                 {
                     Uri = buildDetail.Uri,
-                    Duration = (int) (buildDetail.FinishTime - buildDetail.StartTime).TotalSeconds,
+                    Duration = (int)(buildDetail.FinishTime - buildDetail.StartTime).TotalSeconds,
                     Who = buildDetail.Requests[0].RequestedFor,
                     Username = buildDetail.Requests[0].RequestedForDisplayName,
                     BuildNumber = buildDetail.BuildNumber,
@@ -97,9 +122,9 @@ namespace TfsDashboard.Library
                     CompilationStatus = buildDetail.CompilationStatus.ToString(),
                     Status = buildDetail.Status.ToString(),
                     SourceGetVersion = buildDetail.SourceGetVersion,
-                });
-                summary.LastBuilds = builds.Take(30).Reverse().ToList();
-                
+                }).ToList();
+                summary.LastBuilds = builds.OrderBy(x => x.StartTime);
+
                 var lastBuild = builds.OrderByDescending(x => x.StartTime).FirstOrDefault();
                 if (lastBuild != null)
                 {
@@ -119,7 +144,7 @@ namespace TfsDashboard.Library
             var tcm = projectCollection.GetService<ITestManagementService>();
             var testManagementTeamProject = tcm.GetTeamProject(_settings.Project);
             var runs = testManagementTeamProject.TestRuns.ByBuild(uri);
-            
+
             var result = new
             {
                 Statistics = runs.Select(x => new

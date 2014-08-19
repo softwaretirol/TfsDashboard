@@ -13,11 +13,17 @@ namespace TfsDashboard.Web.Controllers
         {
             if (string.IsNullOrWhiteSpace(username))
                 return null;
-
-            var settings = TfsDashboardSettingsLoader.Load();
-            var manager = new TfsManager(settings.First());
-            var img = manager.GetImage(username);
-            return File(img, "image");
+            try
+            {
+                var settings = TfsDashboardSettingsLoader.Load();
+                var manager = new TfsManager(settings.First());
+                var img = manager.GetImage(username);
+                return File(img, "image");
+            }
+            catch
+            {
+                return HttpNotFound();
+            }
         }
     }
 }

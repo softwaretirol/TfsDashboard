@@ -98,6 +98,7 @@ function calculateDiagrams($scope) {
             if (item.Duration > maxDuration || maxDuration == undefined)
                 maxDuration = item.Duration;
         });
+        summary.maxDuration = maxDuration;
         $.each(summary.LastBuilds, function (idx, item) {
             item.PercentageDurationLastBuilds = item.Duration / maxDuration;
             item.bgClass = getBuildColorClass(item);
@@ -108,6 +109,7 @@ function calculateDiagrams($scope) {
             if (item.Count > maxCheckins || maxCheckins == undefined)
                 maxCheckins = item.Count;
         });
+        summary.maxCheckins = maxCheckins;
         $.each(summary.CheckinStatistic, function (idx, item) {
             item.PercentageCheckins = item.Count / maxCheckins;
         });
@@ -141,31 +143,38 @@ function getBuildText(lastBuild) {
     return "Unbekannt";
 }
 
+var lastData;
 var currentIdx = 0;
-function refresh($scope, $http) {
+function refresh($scope, $http, $interval) {
     $http({ method: 'GET', url: '/api/TfsDashboard' }).
             success(function (summaries, status, headers, config) {
-                $scope.Data = summaries;
 
-                $scope.SelectedTfs = summaries[currentIdx];
+                if (!angular.equals(lastData, summaries)) {
 
-                $scope.selectSummary = function (idx) {
-                    currentIdx = idx;
+                    lastData = angular.copy(summaries);
+                    $scope.Data = summaries;
+
                     $scope.SelectedTfs = summaries[currentIdx];
+
+                    $scope.selectSummary = function (idx) {
+                        currentIdx = idx;
+                        $scope.SelectedTfs = summaries[currentIdx];
+                        calculateDiagrams($scope);
+                    };
+
                     calculateDiagrams($scope);
-                };
 
-                calculateDiagrams($scope);
+                    $("#loader").hide();
+                    $("#wrapper").show();
+                }
 
-                $("#loader").hide();
-                $("#wrapper").show();
             });
+    $interval(function () { refresh($scope, $http, $interval); }, 500, 1);
 }
 
 app.controller('GreetingController', ['$scope', '$http', '$interval',
     function ($scope, $http, $interval) {
-        refresh($scope, $http);
-        $interval(function () { refresh($scope, $http); }, 5000);
+        $interval(function () { refresh($scope, $http, $interval); }, 0, 1);
         $interval(function () { document.location.reload(true); }, 1000 * 60 * 60);
     }
 ]);
